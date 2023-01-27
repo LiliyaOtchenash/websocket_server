@@ -37,8 +37,11 @@ def write_new_points_and_prepare_response(data):
         now = datetime.now(ZoneInfo('UTC'))
         utc_now = calendar.timegm(now.utctimetuple())
         symbol_instance = CurrencyAsset.objects.get(name=symbol)
-        quotes_history = QuotesHistory.objects.create(
+        # quotes_history = QuotesHistory.objects.create(
+        #     currency_asset=symbol_instance, time=utc_now, quote=quote)
+        quotes_history = QuotesHistory(
             currency_asset=symbol_instance, time=utc_now, quote=quote)
+        quotes_history.save()
         result[quotes_history.currency_asset_id] = {
             'message':
                 {'assetName': quotes_history.currency_asset.name,

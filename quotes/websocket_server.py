@@ -15,7 +15,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 logging.basicConfig(level=logging.INFO)
 
 
-CONNECTIONS = collections.defaultdict(list)
+CONNECTIONS = collections.defaultdict(set)
 
 
 async def handle_connections(websocket):
@@ -27,7 +27,7 @@ async def handle_connections(websocket):
     try:
         async for messages in websocket:
             message = json.loads(messages)
-            action = message.get('action')
+            action = message.get('action', None)
             if action == 'assets':
                 await send_assets_list(websocket)
             elif action == 'subscribe':
@@ -48,16 +48,15 @@ async def handle_connections(websocket):
 
 
 def unsubscribe(websocket):
-    for queue, users_list in CONNECTIONS.items():
-        if websocket in users_list:
-            users_list.remove(websocket)
-            break
+    for queue, users_set in CONNECTIONS.items():
+        if websocket in users_set:
+            users_set.remove(websocket)
+            return
 
 
 async def subscribe(websocket, asset_id):
-    global CONNECTIONS
     unsubscribe(websocket)
-    CONNECTIONS[asset_id].append(websocket)
+    CONNECTIONS[asset_id].add(websocket)
 
 
 async def send_assets_list(websocket):
@@ -74,11 +73,16 @@ async def send_asset_history(websocket, asset_id):
 
 
 async def send_points(points):
-    for connect, point in points.items():
-        logging.info(f'<<< {CONNECTIONS}')
+    for conn, point in points.items():
+        connect = CONNECTIONS[int(conn)]
+        if not connect or not point:
+            logging.info(f'{connect}, {point}')
+            continue
+        logging.info(f'<<< {connect}')
         logging.info(f'<<< {point}')
 
-        websockets.broadcast(CONNECTIONS[connect], json.dumps(point))
+        websockets.broadcast(connect, json.dumps(point))
+
 
 
 async def main():

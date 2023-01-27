@@ -5,7 +5,8 @@ import logging
 import websockets
 
 logging.basicConfig(level=logging.INFO)
-
+{"action": "assets", "message": {}}
+{"action": "subscribe", "message": {"assetId": 4}}
 
 async def handler():
     uri = 'ws://localhost:8080'
